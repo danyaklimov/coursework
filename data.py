@@ -1,5 +1,14 @@
+import glob
+
 import pandas as pd
 import numpy as np
+
+
+def get_indexes(file_path: str) -> list[str]:
+    file_names_list: list[str] = os.listdir(file_path)
+    file_names_str = ' '.join(file_names_list)
+    index = re.findall('[A-Z]+', file_names_str)
+    return index
 
 
 def daily_return(df, index):
@@ -7,64 +16,24 @@ def daily_return(df, index):
     return daily_return
 
 
-def read_data() -> tuple:
+def read_data(folder_path: str) -> list:
     """
-    читает данные
-    :return: кортеж из pd.Series , в каждой Adj_close для каждой компании
+    Читает данные
+    :return: кортеж из pd. Series , в каждой Adj_close для каждой компании
     """
-    dataset_path_A = '/home/danila/stock_market_dataset/A.csv'
-    dataset_path_AA = '/home/danila/stock_market_dataset/AA.csv'
-    dataset_path_AAME = '/home/danila/stock_market_dataset/AAME.csv'
-    dataset_path_AAL = '/home/danila/stock_market_dataset/AAL.csv'
-    dataset_path_AAMC = '/home/danila/stock_market_dataset/AAMC.csv'
 
-    data_A = pd.read_csv(
-        dataset_path_A,
-        parse_dates=['Date'],
-        dayfirst=True,
-        keep_default_na=False,
-        low_memory=False,
-        index_col='Date'
-    )
-    data_AA = pd.read_csv(
-        dataset_path_AA, parse_dates=['Date'], dayfirst=True,
-        keep_default_na=False,
-        low_memory=False,
-        index_col='Date'
-    )
-    data_AAME = pd.read_csv(
-        dataset_path_AAME,
-        parse_dates=['Date'],
-        dayfirst=True,
-        keep_default_na=False,
-        low_memory=False,
-        index_col='Date'
-    )
-    data_AAL = pd.read_csv(
-        dataset_path_AAL,
-        parse_dates=['Date'],
-        dayfirst=True,
-        keep_default_na=False,
-        low_memory=False,
-        index_col='Date'
-    )
-    data_AAMC = pd.read_csv(
-        dataset_path_AAMC,
-        parse_dates=['Date'],
-        dayfirst=True, keep_default_na=False,
-        low_memory=False, index_col='Date'
-    )
+    result = []
 
-    data_A = data_A.loc['2018-07-01':'2019-06-30']['Adj Close']
-    data_AA = data_AA.loc['2018-07-01':'2019-06-30']['Adj Close']
-    data_AAME = data_AAME.loc['2018-07-01':'2019-06-30']['Adj Close']
-    data_AAL = data_AAL.loc['2018-07-01':'2019-06-30']['Adj Close']
-    data_AAMC = data_AAMC.loc['2018-07-01':'2019-06-30']['Adj Close']
+    file_list = glob.glob(folder_path + "/*.csv")
+    main_dataframe = pd.DataFrame(pd.read_csv(file_list[0]))
+    for i in range(1, len(file_list)):
+        data = pd.read_csv(file_list[i])
+        data = data.loc['2018-07-01':'2019-06-30']['Adjusted Close']
+        result.append(data)
 
-    return data_A, data_AA, data_AAME, data_AAL, data_AAMC
+    return result
 
-
-def daily(dataframes: tuple) -> list[list]:
+def daily(dataframes: list) -> list[list]:
     """
     Считает daily_returns для каждой компании
     :return: список со списками из daily returns для каждой компании
@@ -86,12 +55,13 @@ def daily(dataframes: tuple) -> list[list]:
 
 def daily_returns_dataframe(
         daily_returns: list[list],
-        dataframes: tuple
+        dataframes: tuple,
+        index: list[str]
 ) -> pd.DataFrame:
     # добавляю daily returns в таблицу
     for i in range(len(dataframes)):
         dataframes[i]['daily_returns'] = daily_returns[i]
 
     frames = [x.daily_returns for x in dataframes]
-    result = pd.DataFrame(frames, index=['A', 'AA', 'AAME', 'AAL', 'AAMC'])
+    result = pd.DataFrame(frames, index=index)
     return result
