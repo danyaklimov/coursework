@@ -9,12 +9,16 @@ def threshold_sign(threshold_kd: float) -> float:
     res = (threshold_kd + 1) / 2
     return res
 
+
 def threshold_pearson(threshold_sign: float) -> float:
     res = -1 * np.cos(np.pi * threshold_sign)
     return res
 
+
 def t_stat_pearson(threshold, corr_coef):
-    stat = np.sqrt(250) * (0.5 * np.log((1 + corr_coef)/(1 - corr_coef)) - 0.5 * np.log((1 + threshold)/(1 - threshold)))
+    stat = np.sqrt(250) * (
+                0.5 * np.log((1 + corr_coef) / (1 - corr_coef)) - 0.5 * np.log(
+            (1 + threshold) / (1 - threshold)))
     return stat
 
 
@@ -53,24 +57,33 @@ def gamma_kendall(
     for i in range(len(daily_returns_i)):
         for j in range(len(daily_returns_j)):
             if i != j:
-                gamma_kd += sign_kd(daily_returns_i[i], daily_returns_i[j], daily_returns_j[i],
+                gamma_kd += sign_kd(daily_returns_i[i], daily_returns_i[j],
+                                    daily_returns_j[i],
                                     daily_returns_j[j])
 
     gamma_kd = (gamma_kd / n_days) / (n_days - 1)
 
     return gamma_kd
 
+
 def kurtosis(df, n, N):
     df = np.array(df)
     cov_matrix = np.cov(df)
     sum_ = 0
     for i in range(len(df)):
-        sum_ += ((df[:, i] - np.mean(df, axis=1)).dot(np.linalg.inv(cov_matrix)).dot((df[:, i] - np.mean(df, axis=1)).T)) ** 2
-    result = sum_ * (1/n) * (1/(N*(N+2))) - 1
+        sum_ += ((df[:, i] - np.mean(df, axis=1)).dot(
+            np.linalg.inv(cov_matrix)).dot(
+            (df[:, i] - np.mean(df, axis=1)).T)) ** 2
+    result = sum_ * (1 / n) * (1 / (N * (N + 2))) - 1
     return result
 
-def t_stats_pearson_array(threshold, N_companies):
-    corr_matrix = np.corrcoef(daily(read_data()))
+
+def t_stats_pearson_array(threshold, N_companies, folder_path):
+    dataframes = read_data(folder_path, N_companies)
+    daily_returns = daily(dataframes)
+    #corr_matrix = pd.DataFrame(dict(dataframes)).corr()
+    corr_matrix = np.corrcoef(daily_returns)
+    # print(corr_matrix)
     t_stats = []
 
     for i in range(N_companies):
@@ -83,6 +96,7 @@ def t_stats_pearson_array(threshold, N_companies):
         t_stats.append(st)
 
     return t_stats
+
 
 def t_stats_sign_array(dataframe: pd.DataFrame, N_companies: int):
     t_sign_stats = []
@@ -98,19 +112,24 @@ def t_stats_sign_array(dataframe: pd.DataFrame, N_companies: int):
 
     return t_sign_stats
 
-def gamma_kendall_array(daily_returns: list[list], N_companies: int) -> list[list]:
+
+def gamma_kendall_array(daily_returns: list[list], N_companies: int) -> list[
+    list]:
     gamma_kendall_stats = []
 
     for i in range(N_companies):
         st = []
         for j in range(N_companies):
             if i == j:
-                st.append(0) # не помню почему заполнял нулями, наверно чтобы квадратная матрица получилась
+                st.append(
+                    0)  # не помню почему заполнял нулями, наверно чтобы квадратная матрица получилась
             else:
-                st.append(gamma_kendall(daily_returns[i], daily_returns[j], 250))
+                st.append(
+                    gamma_kendall(daily_returns[i], daily_returns[j], 250))
         gamma_kendall_stats.append(st)
 
     return gamma_kendall_stats
+
 
 def P_c(gamma_kendall: float) -> float:
     return (gamma_kendall + 1) / 2
@@ -148,12 +167,14 @@ def t_kendall_norm(
     p_c = P_c(gamma_kd)
     p_cc = P_cc(daily_i, daily_j, n_days)
 
-    res = (np.sqrt(n_days) * (gamma_kd - threshold)) / (4 * np.sqrt(p_cc - p_c ** 2))
+    res = (np.sqrt(n_days) * (gamma_kd - threshold)) / (
+                4 * np.sqrt(np.abs(p_cc - p_c ** 2)))
 
     return res
 
 
-def t_kendall_norm_array(daily_returns: list[list], n_companies: int, n_days: int, threshold: float) -> list[list]:
+def t_kendall_norm_array(daily_returns: list[list], n_companies: int,
+                         n_days: int, threshold: float) -> list[list]:
     t_kendall_array = []
 
     for i in range(n_companies):
@@ -162,21 +183,24 @@ def t_kendall_norm_array(daily_returns: list[list], n_companies: int, n_days: in
             if i == j:
                 st.append(0)
             else:
-                st.append(t_kendall_norm(daily_returns[i], daily_returns[j], threshold, n_days))
+                st.append(t_kendall_norm(daily_returns[i], daily_returns[j],
+                                         threshold, n_days))
         t_kendall_array.append(st)
 
     return t_kendall_array
 
-def p_values(threshold: float, N_days: int, N_companies: int, daily_returns: list[list],
-             dataframe: pd.DataFrame, elliptical=True):
 
+def p_values(folder_path: str, threshold: float, N_days: int, N_companies: int,
+             daily_returns: list[list],
+             dataframe: pd.DataFrame, elliptical=True):
     threshold_sg: float = threshold_sign(threshold)
     threshold_p: float = threshold_pearson(threshold_sg)
 
     # для нормально распределенного вектора Х
-    t_stats = t_stats_pearson_array(threshold_p, N_companies)
+    t_stats = t_stats_pearson_array(threshold_p, N_companies, folder_path)
     t_sign_stats = t_stats_sign_array(dataframe, N_companies)
-    t_kendall_stats = t_kendall_norm_array(daily_returns, N_companies, N_days, threshold)
+    t_kendall_stats = t_kendall_norm_array(daily_returns, N_companies, N_days,
+                                           threshold)
 
     k = kurtosis(dataframe, N_days, N_companies)
 
@@ -196,20 +220,27 @@ def p_values(threshold: float, N_days: int, N_companies: int, daily_returns: lis
                 ps_kendall.append(0)
             else:
                 if elliptical:
-                    ps_pearson.append(1 - sps.norm.cdf(np.sqrt(N_days/(k + 1)) * t_stats[i][j]))
-                    ps_sign.append(1 - sps.norm.cdf((t_sign_stats[i][j] - N_days * threshold_sg)/(np.sqrt(N_days*threshold_sg*(1-threshold_sg)))))
+                    ps_pearson.append(1 - sps.norm.cdf(
+                        np.sqrt(N_days / (k + 1)) * t_stats[i][j]))
+                    ps_sign.append(1 - sps.norm.cdf(
+                        (t_sign_stats[i][j] - N_days * threshold_sg) / (
+                            np.sqrt(
+                                N_days * threshold_sg * (1 - threshold_sg)))))
                     ps_kendall.append(1 - sps.norm.cdf(t_kendall_stats[i][j]))
                 else:
                     ps_pearson.append(1 - sps.norm.cdf(t_stats[i][j]))
-                    ps_sign.append(1 - sps.binom.cdf(t_sign_stats[i][j], N_days, threshold_sg))
+                    ps_sign.append(
+                        1 - sps.binom.cdf(t_sign_stats[i][j], N_days,
+                                          threshold_sg))
         p_values_pearson.append(ps_pearson)
         p_values_sign.append(ps_sign)
         p_values_kendall.append(ps_kendall)
 
     return p_values_pearson, p_values_sign, p_values_kendall
 
-def edges(p_values_pearson, p_values_sign, p_values_kendall, N_COMPANIES, ALPHA, elliptical=True):
-    labels = ['A', 'AA', 'AAME', 'AAL', 'AAMC']
+
+def edges(p_values_pearson, p_values_sign, p_values_kendall, N_COMPANIES,
+          ALPHA, labels, elliptical=True):
     edges_pearson = []
     edges_sign = []
     edges_kendall = []
@@ -231,3 +262,22 @@ def edges(p_values_pearson, p_values_sign, p_values_kendall, N_COMPANIES, ALPHA,
         return edges_pearson, edges_sign, edges_kendall
     else:
         return edges_pearson, edges_sign
+
+
+if __name__ == '__main__':
+    from data import *
+
+    data = read_data(
+        '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv',
+        10
+    )
+    daily_returns = daily(data)
+    dataframe = daily_returns_dataframe(daily_returns, data)
+
+    t_stat_p = t_stats_pearson_array(
+        0.1,
+        10,
+        '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv'
+    )
+
+    print(t_stat_p)
