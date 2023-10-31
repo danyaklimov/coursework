@@ -1,5 +1,5 @@
 import glob
-from typing import Tuple, List, Any
+from typing import Any
 
 import pandas as pd
 import numpy as np
@@ -18,15 +18,15 @@ def get_index(file_path: str) -> str:
     import re
 
     index = re.findall('[A-Z]+', file_path)
-    return index[0]
+    return index[1]
 
 def daily_return(df, index):
     daily_return = np.log(df[index] / df[index - 1])
     return daily_return
 
 
-def read_data(folder_path: str, n_companies, start_datetime, stop_datetime) -> \
-tuple[list[tuple[list[str], Any]], int]:
+def read_data(folder_path: str, n_companies, start_datetime, stop_datetime
+              ) -> tuple[list[tuple[str, pd.Series]], int]:
     """
     Читает данные
     :return: спиок из (pd. Series, index) , в каждой Adj_close для каждой компании
@@ -35,22 +35,14 @@ tuple[list[tuple[list[str], Any]], int]:
     result = []
 
     file_list = glob.glob(folder_path + "/*.csv")
-    companies = ['/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/WABC.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/INFN.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/MAT.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/EXPE.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/PCTY.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/SPWH.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/KELYA.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/EBTC.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/GTLS.csv',
-                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/CECO.csv']
+    #companies = []
+
     i = 0
     n = 0
     while n != n_companies:
         data = pd.read_csv(
-            # file_list[i],
-            companies[i],
+            file_list[i],
+            #companies[i],
             parse_dates=['Date'],
             dayfirst=True,
             keep_default_na=False,
@@ -58,11 +50,11 @@ tuple[list[tuple[list[str], Any]], int]:
             index_col='Date',
             # on_bad_lines='skip'
         )
-        data['Adjusted Close'].replace('', 1, inplace=True)
+        # data['Adjusted Close'].replace('', 1, inplace=True)
         # data.dropna(subset=['Adjusted Close'], inplace=True)
 
         # '2021-07-01':'2022-06-30'
-        data = data.loc[start_datetime:stop_datetime]['Adjusted Close']
+        data = data.loc[start_datetime:stop_datetime]['Adj Close']
         data = data.astype('float')
         # if len(data) != 252:
         #     print("Недостаточно данных")
@@ -75,7 +67,7 @@ tuple[list[tuple[list[str], Any]], int]:
 
 
         n += 1
-        index = get_index(companies[i])
+        index = get_index(file_list[i])
         result.append((index, data))
         i += 1
 
@@ -150,11 +142,16 @@ def get_independent_set(nodes, edges) -> list:
 
 
 if __name__ == '__main__':
-    import networkx
+    from datetime import date
+
+    START = date(2022, 10, 31)
+    STOP = date(2023, 10, 30)
 
     data = read_data(
-            '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv',
-            10
+            '/home/danila/Downloads/historical_stock_data',
+            10,
+            START,
+            STOP
         )
     daily_returns = daily(data)
     dataframe = daily_returns_dataframe(daily_returns, data)

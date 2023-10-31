@@ -50,7 +50,7 @@ def gamma_kendall(
         if (daily_i_0 - daily_i_1) * (daily_j_0 - daily_j_1) >= 0:
             return 1
         else:
-            return -1
+            return 0
 
     gamma_kd = 0
 
