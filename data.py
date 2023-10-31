@@ -74,44 +74,44 @@ def read_data(folder_path: str, n_companies, start_datetime, stop_datetime
     return result, len(data)
 
 
-def daily(dataframes: list) -> list[list]:
+def get_daily_returns(adj_close_array_and_ticker: list) -> list[list]:
     """
     Считает daily_returns для каждой компании
     :input: read_data(folder_path, n_companies)
-    :return: список с кортежами (daily returns, индекса) для каждой компании
+    :return: список с daily returns для каждой компании
     """
-    daily_returns = []
+    result = []
 
-    for i in range(len(dataframes)):
-        daily_returns_ = []
-        for j in range(1, len(dataframes[i][1])):
-            daily_returns_.append(daily_return(dataframes[i][1], j))
-        daily_returns.append(daily_returns_)
+    for i in range(len(adj_close_array_and_ticker)):
+        _daily_returns = []
+        for j in range(1, len(adj_close_array_and_ticker[i][1])):
+            _daily_returns.append(daily_return(adj_close_array_and_ticker[i][1], j))
+        result.append(_daily_returns)
 
     # добавляю ноль в начало daily returns для каждой компании
-    for i in range(len(daily_returns)):
-        daily_returns[i].insert(0, 0)
+    for i in range(len(result)):
+        result[i].insert(0, 0)
 
-    return daily_returns
+    return result
 
 
-def daily_returns_dataframe(
+def get_dataframe_of_daily_returns_with_ticker_index(
         daily_returns: list[list],
-        dataframes: list[tuple]
+        adj_close_array_and_ticker: list[tuple]
 ) -> pd.DataFrame:
     """
 
-    :param daily_returns: input daily_returns() result
-    :param dataframes:  input read_data() result
+    :param daily_returns: result of daily_returns()
+    :param adj_close_array_and_ticker:  result of read_data()
     :return: pd.DataFrame
     """
     index = []
-    for i in range(len(dataframes)):
-        dataframes[i][1]['daily_returns'] = daily_returns[i]
-        index.append(dataframes[i][0])
+    for i in range(len(adj_close_array_and_ticker)):
+        # adj_close_array_and_ticker[i][1]['daily_returns'] = daily_returns[i]
+        index.append(adj_close_array_and_ticker[i][0])
 
-    frames = [x[1].daily_returns for x in dataframes]
-    result = pd.DataFrame(frames, index=index)
+    # frames = [x[1].daily_returns for x in adj_close_array_and_ticker]
+    result = pd.DataFrame(daily_returns, index=index)
     return result
 
 def get_clique(nodes, edges) -> list:
@@ -147,13 +147,16 @@ if __name__ == '__main__':
     START = date(2022, 10, 31)
     STOP = date(2023, 10, 30)
 
-    data = read_data(
+    adj_close_array_and_ticker, _ = read_data(
             '/home/danila/Downloads/historical_stock_data',
-            10,
+            40,
             START,
             STOP
         )
-    daily_returns = daily(data)
-    dataframe = daily_returns_dataframe(daily_returns, data)
+    daily_returns = get_daily_returns(adj_close_array_and_ticker)
+    dataframe = get_dataframe_of_daily_returns_with_ticker_index(
+        daily_returns, adj_close_array_and_ticker)
+
+    print(dataframe)
 
 

@@ -15,10 +15,11 @@ def threshold_pearson(threshold_sign: float) -> float:
     return res
 
 
-def t_stat_pearson(threshold, corr_coef):
-    stat = np.sqrt(250) * (
-                0.5 * np.log((1 + corr_coef) / (1 - corr_coef)) - 0.5 * np.log(
-            (1 + threshold) / (1 - threshold)))
+def t_stat_pearson(threshold, corr_coef, n):
+    # корень из n как в кинге колданова
+    stat = np.sqrt(n) * (
+            0.5 * np.log((1 + corr_coef) / (1 - corr_coef)) - 0.5 * np.log(
+        (1 + threshold) / (1 - threshold)))
     return stat
 
 
@@ -78,10 +79,8 @@ def kurtosis(df, n, N):
     return result
 
 
-def t_stats_pearson_array(threshold, N_companies, folder_path, start, stop):
-    dataframes, _ = read_data(folder_path, N_companies, start, stop)
-    daily_returns = daily(dataframes)
-    #corr_matrix = pd.DataFrame(dict(dataframes)).corr()
+def t_stats_pearson_array(threshold, N_companies, daily_returns):
+    # corr_matrix = pd.DataFrame(dict(dataframes)).corr()
     corr_matrix = np.corrcoef(daily_returns)
     # print(corr_matrix)
     t_stats = []
@@ -170,7 +169,7 @@ def t_kendall_norm(
     # print('P_c:', p_c)
 
     res = (np.sqrt(n_days) * (gamma_kd - threshold)) / (
-                4 * np.sqrt(np.abs(p_cc - p_c ** 2)))
+            4 * np.sqrt(np.abs(p_cc - p_c ** 2)))
 
     return res
 
@@ -272,7 +271,7 @@ if __name__ == '__main__':
     from data import *
 
     data = read_data(
-        '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv',
+        '/home/danila/Downloads/historical_stock_data',
         10
     )
     daily_returns = daily(data)
