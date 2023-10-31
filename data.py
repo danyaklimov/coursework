@@ -1,4 +1,5 @@
 import glob
+from typing import Tuple, List, Any
 
 import pandas as pd
 import numpy as np
@@ -13,13 +14,19 @@ def get_indexes(file_path: str, i) -> list[str]:
     index = re.findall('[A-Z]+', file_names_str)
     return index[i]
 
+def get_index(file_path: str) -> str:
+    import re
+
+    index = re.findall('[A-Z]+', file_path)
+    return index[0]
 
 def daily_return(df, index):
     daily_return = np.log(df[index] / df[index - 1])
     return daily_return
 
 
-def read_data(folder_path: str, n_companies) -> list[tuple]:
+def read_data(folder_path: str, n_companies, start_datetime, stop_datetime) -> \
+tuple[list[tuple[list[str], Any]], int]:
     """
     Читает данные
     :return: спиок из (pd. Series, index) , в каждой Adj_close для каждой компании
@@ -28,11 +35,22 @@ def read_data(folder_path: str, n_companies) -> list[tuple]:
     result = []
 
     file_list = glob.glob(folder_path + "/*.csv")
+    companies = ['/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/WABC.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/INFN.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/MAT.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/EXPE.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/PCTY.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/SPWH.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/KELYA.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/EBTC.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/GTLS.csv',
+                 '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv/CECO.csv']
     i = 0
     n = 0
     while n != n_companies:
         data = pd.read_csv(
-            file_list[i],
+            # file_list[i],
+            companies[i],
             parse_dates=['Date'],
             dayfirst=True,
             keep_default_na=False,
@@ -42,19 +60,26 @@ def read_data(folder_path: str, n_companies) -> list[tuple]:
         )
         data['Adjusted Close'].replace('', 1, inplace=True)
         # data.dropna(subset=['Adjusted Close'], inplace=True)
-        data = data.loc['2021-07-01':'2022-06-30']['Adjusted Close']
+
+        # '2021-07-01':'2022-06-30'
+        data = data.loc[start_datetime:stop_datetime]['Adjusted Close']
         data = data.astype('float')
-        if len(data) != 252:
-            print("Недостаточно данных")
-        elif get_indexes(folder_path, i) in ['GMAN']:
-            print("Дерьмовые данные")
-        else:
-            n += 1
-            index = get_indexes(folder_path, i)
-            result.append((index, data))
+        # if len(data) != 252:
+        #     print("Недостаточно данных")
+        # if get_indexes(folder_path, i) in ['GMAN']:
+        #     print("Дерьмовые данные")
+        # else:
+        #     n += 1
+        #     index = get_indexes(folder_path, i)
+        #     result.append((index, data))
+
+
+        n += 1
+        index = get_index(companies[i])
+        result.append((index, data))
         i += 1
 
-    return result
+    return result, len(data)
 
 
 def daily(dataframes: list) -> list[list]:
@@ -97,16 +122,41 @@ def daily_returns_dataframe(
     result = pd.DataFrame(frames, index=index)
     return result
 
+def get_clique(nodes, edges) -> list:
+    nodes = list(nodes)
+    edges = list(edges)
+    clique_list = []
+
+    counter = 0
+    for node in nodes:
+        if all([True if node in edge else False for edge in edges]):
+            clique_list.append(node)
+            counter += 1
+
+    if counter < 2:
+        return []
+    return clique_list
+
+def get_independent_set(nodes, edges) -> list:
+    nodes = list(nodes)
+    edges = list(edges)
+    result = []
+
+    for node in nodes:
+        if not any([True if node in edge else False for edge in edges]):
+            result.append(node)
+
+    return result
+
 
 if __name__ == '__main__':
+    import networkx
+
     data = read_data(
             '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv',
             10
         )
     daily_returns = daily(data)
     dataframe = daily_returns_dataframe(daily_returns, data)
-    print(
-        data,
-        daily_returns,
-        dataframe
-    )
+
+

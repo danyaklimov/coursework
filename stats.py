@@ -61,7 +61,7 @@ def gamma_kendall(
                                     daily_returns_j[i],
                                     daily_returns_j[j])
 
-    gamma_kd = (gamma_kd / n_days) / (n_days - 1)
+    gamma_kd = gamma_kd / (n_days * (n_days - 1))
 
     return gamma_kd
 
@@ -78,8 +78,8 @@ def kurtosis(df, n, N):
     return result
 
 
-def t_stats_pearson_array(threshold, N_companies, folder_path):
-    dataframes = read_data(folder_path, N_companies)
+def t_stats_pearson_array(threshold, N_companies, folder_path, start, stop):
+    dataframes, _ = read_data(folder_path, N_companies, start, stop)
     daily_returns = daily(dataframes)
     #corr_matrix = pd.DataFrame(dict(dataframes)).corr()
     corr_matrix = np.corrcoef(daily_returns)
@@ -166,6 +166,8 @@ def t_kendall_norm(
     gamma_kd = gamma_kendall(daily_i, daily_j, n_days)
     p_c = P_c(gamma_kd)
     p_cc = P_cc(daily_i, daily_j, n_days)
+    # print('P_cc:', p_cc)
+    # print('P_c:', p_c)
 
     res = (np.sqrt(n_days) * (gamma_kd - threshold)) / (
                 4 * np.sqrt(np.abs(p_cc - p_c ** 2)))
@@ -190,14 +192,16 @@ def t_kendall_norm_array(daily_returns: list[list], n_companies: int,
     return t_kendall_array
 
 
-def p_values(folder_path: str, threshold: float, N_days: int, N_companies: int,
+def p_values(start, stop, folder_path: str,
+             threshold: float, N_days, N_companies: int,
              daily_returns: list[list],
              dataframe: pd.DataFrame, elliptical=True):
     threshold_sg: float = threshold_sign(threshold)
     threshold_p: float = threshold_pearson(threshold_sg)
 
     # для нормально распределенного вектора Х
-    t_stats = t_stats_pearson_array(threshold_p, N_companies, folder_path)
+    t_stats = t_stats_pearson_array(
+        threshold_p, N_companies, folder_path, start, stop)
     t_sign_stats = t_stats_sign_array(dataframe, N_companies)
     t_kendall_stats = t_kendall_norm_array(daily_returns, N_companies, N_days,
                                            threshold)
