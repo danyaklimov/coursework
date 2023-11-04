@@ -1,8 +1,6 @@
-import numpy as np
 import pandas as pd
 import scipy.stats as sps
-
-from data import daily, read_data
+import numpy as np
 
 
 def threshold_sign(threshold_kd: float) -> float:
@@ -91,7 +89,7 @@ def t_stats_pearson_array(threshold, N_companies, daily_returns):
             if i == j:
                 st.append(0)
             else:
-                st.append(t_stat_pearson(threshold, corr_matrix[i][j]))
+                st.append(t_stat_pearson(threshold, corr_matrix[i][j], N_companies))
         t_stats.append(st)
 
     return t_stats
@@ -269,18 +267,22 @@ def edges(p_values_pearson, p_values_sign, p_values_kendall, N_COMPANIES,
 
 if __name__ == '__main__':
     from data import *
+    from datetime import date
 
-    data = read_data(
+    START = date(2022, 10, 31)
+    STOP = date(2023, 10, 30)
+
+    dataframe = get_transformed_data(
         '/home/danila/Downloads/historical_stock_data',
-        10
+        40,
+        START,
+        STOP
     )
-    daily_returns = daily(data)
-    dataframe = daily_returns_dataframe(daily_returns, data)
 
     t_stat_p = t_stats_pearson_array(
         0.1,
-        10,
-        '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv'
+        40,
+        dataframe
     )
 
-    print(t_stat_p)
+    print(np.array(t_stat_p))

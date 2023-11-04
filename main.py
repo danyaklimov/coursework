@@ -23,7 +23,7 @@ FOLDER_PATH = '/home/danila/Downloads/archive/stock_market_data/nasdaq/csv'
 
 dataframes, N_DAYS = read_data(FOLDER_PATH, N_COMPANIES, START, STOP)
 print('N_DAYS:', N_DAYS)
-daily_returns = np.array(daily(dataframes))
+daily_returns = np.array(get_daily_returns(dataframes))
 daily_returns_dataframes = daily_returns_dataframe(daily_returns, dataframes)
 #nodes = [x[0] for x in dataframes]
 nodes = [
