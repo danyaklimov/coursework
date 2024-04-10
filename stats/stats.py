@@ -14,7 +14,7 @@ def threshold_pearson(threshold_sign: float) -> float:
 
 
 def t_stat_pearson(threshold, corr_coef, n):
-    # корень из n как в кинге колданова
+    # корень из n как в книге колданова
     stat = np.sqrt(n) * (
             0.5 * np.log((1 + corr_coef) / (1 - corr_coef)) - 0.5 * np.log(
         (1 + threshold) / (1 - threshold)))

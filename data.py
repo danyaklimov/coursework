@@ -1,5 +1,5 @@
+import datetime
 import glob
-from typing import Any
 
 import pandas as pd
 import numpy as np
@@ -18,6 +18,22 @@ def get_transformed_data(folder_path: str, start_datetime,
 
     return dataframe_of_daily_returns_with_ticker
 
+def get_transformed_data_column(
+        folder_path: str,
+        start_datetime: datetime.date,
+        stop_datetime: datetime.date
+) -> pd.DataFrame:
+
+    adj_close_array_and_ticker, _ = read_data(folder_path,
+                                              start_datetime, stop_datetime)
+    daily_returns = get_daily_returns(adj_close_array_and_ticker)
+    index = []
+    for i in range(len(adj_close_array_and_ticker)):
+        # adj_close_array_and_ticker[i][1]['daily_returns'] = daily_returns[i]
+        index.append(adj_close_array_and_ticker[i][0])
+    result = pd.DataFrame(np.array(daily_returns).T, columns=index)
+
+    return result
 
 def get_indexes(file_path: str, i) -> list[str]:
     import os
@@ -34,6 +50,13 @@ def get_index(file_path: str) -> str:
 
     index = re.findall('[A-Z]+', file_path)
     return index[1]
+
+def get_all_indexes(file_path: str) -> list[str]:
+    indexes = []
+    for file_path in glob.glob(file_path + "/*.csv"):
+        indexes.append(get_index(file_path))
+
+    return indexes
 
 
 def calculate_daily_return(adj_close_array, index):
@@ -61,7 +84,8 @@ def read_data(folder_path: str, start_datetime, stop_datetime
             file_list[i],
             # companies[i],
             parse_dates=['Date'],
-            dayfirst=True,
+            # dayfirst=True,
+            dayfirst=False,
             keep_default_na=False,
             low_memory=False,
             index_col='Date',
@@ -87,7 +111,7 @@ def read_data(folder_path: str, start_datetime, stop_datetime
         result.append((index, data))
         i += 1
 
-    return result, len(data)
+    return result, len(result)
 
 
 def get_daily_returns(adj_close_array_and_ticker: list) -> list[list]:
@@ -188,4 +212,24 @@ if __name__ == '__main__':
         START,
         STOP
     )
+    data, _ = read_data(
+        '/home/danila/Downloads/historical_stock_data',
+        START,
+        STOP
+    )
+    dataframe_column = get_transformed_data_column(
+        '/home/danila/Downloads/historical_stock_data',
+        START,
+        STOP
+    )
     print(dataframe)
+    print(dataframe_column)
+    print(dataframe_column.to_numpy())
+
+    # data.corr(method='kendall').to_csv('correlations_kendall.csv')
+    # data.corr(method='pearson').to_csv('correlations_pearson.csv')
+
+    # save correlations.csv to csv
+    # pd.DataFrame(np.corrcoef(dataframe)).to_csv('correlations.csv')
+
+
